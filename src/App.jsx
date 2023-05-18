@@ -36,7 +36,7 @@ export default function App() {
   const handleVideoOnPlay = () => {
     setInterval(async () => {
       await detectFace();
-    }, 500);
+    }, 100);
   };
 
   const startVideo = async () => {
