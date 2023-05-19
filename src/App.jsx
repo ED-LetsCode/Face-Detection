@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import "./App.css";
 import * as faceapi from "face-api.js";
 
@@ -23,12 +23,21 @@ export default function App() {
     const detections = await faceapi
       .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
       .withFaceLandmarks()
-      .withFaceExpressions();
+      .withFaceExpressions()
+      .withAgeAndGender();
 
     const resizedDetections = faceapi.resizeResults(detections, displaySize);
     canvasRef.current.getContext("2d").clearRect(0, 0, videoWidth, videoHeight);
 
-    faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
+    resizedDetections.forEach((detection) => {
+      const box = detection.detection.box;
+      const drawBox = new faceapi.draw.DrawBox(box, {
+        label: `Age: ${Math.round(detection.age)} ${detection.gender}`,
+        boxColor: "red",
+      });
+      drawBox.draw(canvasRef.current);
+    });
+
     faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetections);
     faceapi.draw.drawFaceExpressions(canvasRef.current, resizedDetections);
   };
@@ -36,7 +45,7 @@ export default function App() {
   const handleVideoOnPlay = () => {
     setInterval(async () => {
       await detectFace();
-    }, 100);
+    }, 500);
   };
 
   const startVideo = async () => {
@@ -59,6 +68,7 @@ export default function App() {
       await faceapi.nets.faceLandmark68Net.loadFromUri("/models");
       await faceapi.nets.faceRecognitionNet.loadFromUri("/models");
       await faceapi.nets.faceExpressionNet.loadFromUri("/models");
+      await faceapi.nets.ageGenderNet.loadFromUri("/models");
     } catch (error) {
       console.error(error);
     }
